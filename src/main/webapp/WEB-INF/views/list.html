@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Book</title>
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+</head>
+<body>
+<form>
+    <table>
+        <tr>
+            <td>Name</td>
+            <td><input type="text" id="name" placeholder="name"></td>
+        </tr>
+        <tr>
+            <td>Author</td>
+            <td><input type="text" id="author" placeholder="author"></td>
+        </tr>
+        <tr>
+            <td>Price</td>
+            <td><input type="text" id="price" placeholder="price"></td>
+        </tr>
+        <tr>
+            <td>Category</td>
+            <td>
+                <select name="category" id="category">
+                    <option th:each="c :${categories}" th:text="${c.name}" th:value="${c.id}"></option>
+                </select>
+            </td>
+        </tr>
+        <tr>
+            <td></td>
+            <td><input type="button" value="Add" onclick="addNewBook()"></td>
+        </tr>
+    </table>
+</form>
+<table id="booklist">
+    <tr>
+        <td>Id</td>
+        <td>Name</td>
+        <td>Author</td>
+        <td>Price</td>
+        <td>Category</td>
+    </tr>
+    <th:block th:each="b:${books}">
+        <tr>
+            <td th:text="${b.id}"></td>
+            <td th:text="${b.name}"></td>
+            <td th:text="${b.author}"></td>
+            <td th:text="${b.price}"></td>
+            <td th:text="${b.category.name}"></td>
+            <td>
+                <a class="deleteBook" onclick="deleteBook(this)" th:href="${b.getId()}">Delete</a>
+                <a onclick="editForm(this)" th:href="${b.getId()}">Edit</a>
+            </td>
+        </tr>
+    </th:block>
+</table>
+<form>
+    <table>
+        <tr>
+            <td>Name</td>
+            <td><input type="text" id="name1" placeholder="name"></td>
+        </tr>
+        <tr>
+            <td>Author</td>
+            <td><input type="text" id="author1" placeholder="author"></td>
+        </tr>
+        <tr>
+            <td>Price</td>
+            <td><input type="text" id="price1" placeholder="price"></td>
+        </tr>
+        <tr>
+            <td>Category</td>
+            <td>
+                <select name="category" id="category1">
+                    <option th:each="c :${categories}" th:text="${c.name}" th:value="${c.id}"></option>
+                </select>
+            </td>
+        </tr>
+        <tr id="editform"></tr>
+    </table>
+</form>
+</body>
+<script>
+    function addNewBook() {
+        let name = $('#name').val();
+        let author = $('#author').val();
+        let price = $('#price').val();
+        let category = $('#category').val();
+        let newBook = {
+            name: name,
+            author: author,
+            price: price,
+            category: {
+                id: parseInt(category)
+            },
+        }
+        $.ajax({
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            },
+            type: "POST",
+            data: JSON.stringify(newBook),
+            url: "/books",
+            success: sucessHandle()
+        });
+        event.preventDefault();
+    }
+
+    function getBook(book) {
+        return `<tr><td >${book.id}</td><td>${book.name}</td>` +
+            `<td>${book.author}</td>` +
+            `<td>${book.price}</td>` +
+            ` <td>${book.category.name}</td>` +
+            `<td>
+                <a className="deleteBook" onclick="deleteBook(this)" href="${book.id}">Delete</a>
+                <a onclick="editForm(this)" href="${book.id}">Edit</a>
+             </td>` +
+            `</tr>`
+    };
+
+    function sucessHandle() {
+        $.ajax({
+            type: "GET",
+            url: "/books",
+            success: function (data) {
+                let content = '<tr>' +
+                    '<td>Id</td>' +
+                    '<td>Name</td>' +
+                    '<td>Author</td>' +
+                    '<td>Price</td>' +
+                    '<td>Category</td>' +
+                    '<tr/>';
+                for (let i = 0; i < data.length; i++) {
+                    content += getBook(data[i])
+                }
+                document.getElementById('booklist').innerHTML = content;
+            }
+        });
+    }
+    function deleteBook(element) {
+        let bookId = element.getAttribute("href");
+        $.ajax({
+            type:"DELETE",
+            url : `/books/${bookId}`,
+            success : sucessHandle()
+        })
+        event.preventDefault();
+    }
+    function editForm(element) {
+        let bookId = element.getAttribute("href");
+        let content =`<button type="button" onclick="updateBook(${id})">Update</button> `;
+        document.getElementById('editform').innerHTML = content;
+        $.ajax({
+            type:"GET",
+            url:`/books/${bookId}`,
+            success:function (book) {
+                $(`#name1`).val(book.name)
+                $(`#author1`).val(book.author)
+                $(`#price1`).val(book.price)
+                $(`#category1`).val(book.category.name)
+            }
+        })
+    }
+    function updateBook(id) {
+        let name = $(`#name1`).val()
+        let author = $(`#author1`).val()
+        let price = $(`#price1`).val()
+        let category = $(`#category1`).val()
+        let editbook = {
+            name : name,
+            author : author,
+            price : price,
+            category:{
+                id :category
+            }
+        }
+        $.ajax({
+            headers: {
+                'Accepted' : 'application/json',
+                'Content-Type' :'application/json',
+            },
+            type :"PUT",
+            data: JSON.stringify(editbook),
+            url :`/books/${id}`,
+            success:sucessHandle()
+        })
+    }
+</script>
+</html>
