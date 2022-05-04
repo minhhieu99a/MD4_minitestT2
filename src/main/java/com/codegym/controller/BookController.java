@@ -18,12 +18,14 @@ import java.util.Optional;
 public class BookController {
     @Autowired
     private IBookService bookService;
-@Autowired
-private ICategoryService categoryService;
+    @Autowired
+    private ICategoryService categoryService;
+
     @ModelAttribute("categories")
-    public Iterable<Category> findAllCategories(){
+    public Iterable<Category> findAllCategories() {
         return categoryService.findAll();
     }
+
     @GetMapping("list")
     public ModelAndView getAllBookPage() {
         List<Book> books = (List<Book>) bookService.findAll();
@@ -50,5 +52,20 @@ private ICategoryService categoryService;
         }
         bookService.remove(id);
         return new ResponseEntity<>(book.get(), HttpStatus.NO_CONTENT);
+    }
+    @GetMapping("/{id}")
+    public ResponseEntity<Book> findBook(@PathVariable Long id){
+        bookService.findById(id);
+        return new ResponseEntity<>(HttpStatus.OK);
+    }
+    @PutMapping("/{id}")
+    public ResponseEntity<Book> editBook(@PathVariable Long id, @RequestBody Book book) {
+        Optional<Book> book1 = bookService.findById(id);
+        book.setId(book1.get().getId());
+        if (!book1.isPresent()){
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+        bookService.save(book);
+        return new ResponseEntity<>(HttpStatus.OK);
     }
 }
